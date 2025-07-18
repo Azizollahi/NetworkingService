@@ -15,10 +15,12 @@ namespace AG.RouterService.SocksService.Infrastructure.Udp;
 
 internal sealed class UdpRelayService : IUdpRelayService
 	{
+		private readonly IAccessControlService accessControlService;
 		private readonly ILogger<UdpRelayService> logger;
 
-		public UdpRelayService(ILogger<UdpRelayService> logger)
+		public UdpRelayService(IAccessControlService accessControlService,ILogger<UdpRelayService> logger)
 		{
+			this.accessControlService = accessControlService;
 			this.logger = logger;
 		}
 
@@ -60,6 +62,13 @@ internal sealed class UdpRelayService : IUdpRelayService
 
 					(string? host, int port, int dataOffset) = ParseUdpHeader(buffer);
 					if (host is null) continue;
+
+					// **security check.**
+					if (!await this.accessControlService.IsDestinationAllowedAsync(host))
+					{
+						this.logger.LogWarning("UDP packet to destination {Host} denied by access rules. Dropping packet.", host);
+						continue; // Drop the packet
+					}
 
 					// Extract the actual application data payload
 					ReadOnlyMemory<byte> payload = new ReadOnlyMemory<byte>(buffer, dataOffset, buffer.Length - dataOffset);

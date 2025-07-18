@@ -20,17 +20,20 @@ internal sealed class Socks4ProtocolHandler : IProtocolHandler
 	private readonly IChannelFactory channelFactory;
 	private readonly IOutgoingChannelFactory outgoingChannelFactory;
 	private readonly IDataRelayService dataRelayService;
+	private readonly IAccessControlService accessControlService;
 
 	public Socks4ProtocolHandler(
 		ILogger<Socks4ProtocolHandler> logger,
 		IChannelFactory channelFactory,
 		IOutgoingChannelFactory outgoingChannelFactory,
-		IDataRelayService dataRelayService)
+		IDataRelayService dataRelayService,
+		IAccessControlService accessControlService)
 	{
 		this.logger = logger;
 		this.channelFactory = channelFactory;
 		this.outgoingChannelFactory = outgoingChannelFactory;
 		this.dataRelayService = dataRelayService;
+		this.accessControlService = accessControlService;
 	}
 
 	public bool CanHandle(ReadOnlySpan<byte> initialBytes)
@@ -74,6 +77,14 @@ internal sealed class Socks4ProtocolHandler : IProtocolHandler
 		(string? host, int port) = await ReadCommandBodyAsync(clientChannel, cancellationToken);
 		if (host is null) return;
 
+		// Add the destination check here
+		if (!await this.accessControlService.IsDestinationAllowedAsync(host))
+		{
+			this.logger.LogWarning("SOCKS4 connection to destination {Host} denied by access rules.", host);
+			await SendReplyAsync(clientChannel, Socks4Constants.ReplyFailed, 0, IPAddress.Any, cancellationToken);
+			return;
+		}
+
 		IChannel? targetChannel =
 			await this.outgoingChannelFactory.CreateConnectionAsync(host, port, cancellationToken);
 		if (targetChannel is null)
@@ -90,6 +101,14 @@ internal sealed class Socks4ProtocolHandler : IProtocolHandler
 	{
 		(string? expectedHost, int port) = await ReadCommandBodyAsync(clientChannel, cancellationToken);
 		if (expectedHost is null) return;
+
+		// Add the destination check here
+		if (!await this.accessControlService.IsDestinationAllowedAsync(expectedHost))
+		{
+			this.logger.LogWarning("SOCKS5 BIND request for destination {Host} denied by access rules.", expectedHost);
+			await SendReplyAsync(clientChannel, Socks4Constants.ReplyFailed, 0, IPAddress.Any, cancellationToken);
+			return;
+		}
 
 		Socket listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 		IChannel? targetChannel = null;

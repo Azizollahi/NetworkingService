@@ -61,6 +61,8 @@ public static class DependencyInjectionExtensions
 
 		services.AddSingleton<IUdpRelayService, UdpRelayService>();
 
+		services.AddSingleton<IAccessControlService, AccessControlService>();
+
 		services.AddSingleton<ConnectCommandHandler>();
 		services.AddSingleton<BindCommandHandler>();
 		services.AddSingleton<UdpAssociateCommandHandler>();

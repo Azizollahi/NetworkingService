@@ -1,6 +1,7 @@
 // Copyright By Hossein Azizollahi All Right Reserved.
 
 using System;
+using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
@@ -19,22 +20,32 @@ internal sealed class ConnectionHandlerService : IConnectionHandler
 	private readonly IChannelFactory channelFactory;
 	private readonly IProtocolDispatcher protocolDispatcher;
 	private readonly ISecureChannelFactory secureChannelFactory;
+	private readonly IAccessControlService accessControlService;
 	private readonly ILogger<ConnectionHandlerService> logger;
 
 	public ConnectionHandlerService(
 		IChannelFactory channelFactory,
 		IProtocolDispatcher protocolDispatcher,
 		ISecureChannelFactory secureChannelFactory,
+		IAccessControlService accessControlService,
 		ILogger<ConnectionHandlerService> logger)
 	{
 		this.channelFactory = channelFactory;
 		this.protocolDispatcher = protocolDispatcher;
 		this.secureChannelFactory = secureChannelFactory;
+		this.accessControlService = accessControlService;
 		this.logger = logger;
 	}
 
 	public async Task HandleConnectionAsync(ConnectionContext context, CancellationToken cancellationToken)
 	{
+		var remoteIp = ((IPEndPoint)context.ClientSocket.RemoteEndPoint!).Address;
+		if (!await this.accessControlService.IsSourceAllowedAsync(remoteIp))
+		{
+			this.logger.LogWarning("Connection denied for source IP {RemoteIp} by access rules.", remoteIp);
+			context.ClientSocket.Close(); // Close immediately
+			return;
+		}
 		IChannel channel = this.channelFactory.Create(context.ClientSocket);
 
 		try

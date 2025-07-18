@@ -1,0 +1,32 @@
+[
+	{
+		"Type": "Allow",
+		"Target": "SourceIp",
+		"Pattern": "127.0.0.1"
+	},
+	{
+		"Type": "Allow",
+		"Target": "SourceIp",
+		"Pattern": "192.168.1.*"
+	},
+	{
+		"Type": "Deny",
+		"Target": "SourceIp",
+		"Pattern": "*"
+	},
+	{
+		"Type": "Allow",
+		"Target": "DestinationHost",
+		"Pattern": "*.google.com"
+	},
+	{
+		"Type": "Deny",
+		"Target": "DestinationHost",
+		"Pattern": "badsite.com"
+	},
+	{
+		"Type": "Allow",
+		"Target": "DestinationHost",
+		"Pattern": "*"
+	}
+]

@@ -18,18 +18,21 @@ internal sealed class ConnectCommandHandler : AbstractSocks5CommandHandler
 	private readonly IDataRelayService dataRelayService;
 	private readonly ISocks5AddressReader addressReader;
 	private readonly ISocks5ReplyWriter replyWriter;
+	private readonly IAccessControlService accessControlService;
 	public ConnectCommandHandler(
 		ILogger<ConnectCommandHandler> logger,
 		IOutgoingChannelFactory channelFactory,
 		IDataRelayService dataRelayService,
 		ISocks5AddressReader addressReader,
-		ISocks5ReplyWriter replyWriter)
+		ISocks5ReplyWriter replyWriter,
+		IAccessControlService accessControlService)
 	{
 		this.logger = logger;
 		this.channelFactory = channelFactory;
 		this.dataRelayService = dataRelayService;
 		this.addressReader = addressReader;
 		this.replyWriter = replyWriter;
+		this.accessControlService = accessControlService;
 	}
 
 	public override async Task HandleAsync(Socks5CommandContext context, CancellationToken cancellationToken)
@@ -48,6 +51,13 @@ internal sealed class ConnectCommandHandler : AbstractSocks5CommandHandler
 			if (host is null)
 			{
 				// Error occurred and reply was already sent by the helper.
+				return;
+			}
+
+			if (!await this.accessControlService.IsDestinationAllowedAsync(host))
+			{
+				this.logger.LogWarning("Connection to destination {Host} denied by access rules.", host);
+				await this.replyWriter.SendReplyAsync(context.ClientChannel, Socks5Constants.ReplyConnectionNotAllowed, IPAddress.Any, 0, cancellationToken);
 				return;
 			}
 

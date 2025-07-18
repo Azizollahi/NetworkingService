@@ -20,19 +20,22 @@ internal sealed class BindCommandHandler : AbstractSocks5CommandHandler
 		private readonly IChannelFactory channelFactory;
 		private readonly ISocks5AddressReader addressReader;
 		private readonly ISocks5ReplyWriter replyWriter;
+		private readonly IAccessControlService accessControlService;
 
 		public BindCommandHandler(
 			ILogger<BindCommandHandler> logger,
 			IDataRelayService dataRelayService,
 			IChannelFactory channelFactory,
 			ISocks5AddressReader addressReader,
-			ISocks5ReplyWriter replyWriter)
+			ISocks5ReplyWriter replyWriter,
+			IAccessControlService accessControlService)
 		{
 			this.logger = logger;
 			this.dataRelayService = dataRelayService;
 			this.channelFactory = channelFactory;
 			this.addressReader = addressReader;
 			this.replyWriter = replyWriter;
+			this.accessControlService = accessControlService;
 		}
 
 		public override async Task HandleAsync(Socks5CommandContext context, CancellationToken cancellationToken)
@@ -54,6 +57,14 @@ internal sealed class BindCommandHandler : AbstractSocks5CommandHandler
 				// We must read this to advance the stream, even if we don't use it for validation here.
 				(string? expectedHost, int expectedPort) = await this.addressReader.ReadAddressAndPortAsync(context.ClientChannel, context.CommandHeader, cancellationToken);
 				if (expectedHost is null) return;
+
+				// Add the destination check here
+				if (!await this.accessControlService.IsDestinationAllowedAsync(expectedHost))
+				{
+					this.logger.LogWarning("SOCKS5 BIND request for destination {Host} denied by access rules.", expectedHost);
+					await this.replyWriter.SendReplyAsync(context.ClientChannel, Socks5Constants.ReplyConnectionNotAllowed, IPAddress.Any, 0, cancellationToken);
+					return;
+				}
 
 				// 1. Bind to a local port and start listening.
 				listener.Bind(new IPEndPoint(IPAddress.Any, 0)); // Port 0 lets the OS pick an available port
