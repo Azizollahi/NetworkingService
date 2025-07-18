@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <AssemblyName>AG.RouterService.SharedKernel</AssemblyName>
+        <RootNamespace>AG.RouterService.SharedKernel</RootNamespace>
+    </PropertyGroup>
+
+</Project>

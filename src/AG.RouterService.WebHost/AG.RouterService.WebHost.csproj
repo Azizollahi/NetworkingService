@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <RootNamespace>AG.RouterService</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MediatR" Version="13.0.0" />
+      <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="9.0.7">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.3" />
+      <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="9.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Infrastructure\Persistence\Persistence.csproj" />
+      <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
+      <ProjectReference Include="..\SocksService\Application\Application.csproj" />
+      <ProjectReference Include="..\SocksService\Infrastructure\Infrastructure.csproj" />
+      <ProjectReference Include="..\SocksService\Presentation.SocksV\Presentation.SocksV.csproj" />
+    </ItemGroup>
+
+</Project>
