@@ -7,14 +7,33 @@ using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
+using AG.RouterService.SocksService.Application.Abstractions.Channels;
 using AG.RouterService.SocksService.Application.Abstractions.Models;
 using AG.RouterService.SocksService.Application.Abstractions.Services;
+using AG.RouterService.SocksService.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace AG.RouterService.SocksService.Infrastructure.Listeners;
+
+public enum ChannelMode
+{
+	Standard,
+	Split
+}
+
+public sealed class ChannelModeOptions
+{
+	public ChannelMode Client { get; set; } = ChannelMode.Standard;
+}
+
+public sealed class ClientSplitPortsOptions
+{
+	public int Read { get; set; }
+	public int Write { get; set; }
+}
 
 public sealed class SslOptions
 {
@@ -32,20 +51,27 @@ public sealed class ListenerOptions
 	public SslOptions? SslOptions { get; set; }
 	public List<byte> AllowedAuthMethods { get; set; } = new();
 	public bool EnableSocks4 { get; set; } = true;
+
+	public ChannelModeOptions ChannelMode { get; set; } = new();
+	public ClientSplitPortsOptions? ClientSplitPorts { get; set; }
+
 }
 
 internal sealed class TcpServerListener
 {
+	private readonly int listenPort;
 	private readonly ILogger logger;
 	private readonly ListenerOptions options;
 	private readonly IServiceProvider serviceProvider;
 	private readonly Socket listenerSocket;
 
 	public TcpServerListener(
+		int listenPort,
 		ListenerOptions options,
 		IServiceProvider serviceProvider,
 		ILogger logger)
 	{
+		this.listenPort = listenPort;
 		this.logger = logger;
 		this.options = options;
 		this.serviceProvider = serviceProvider;
@@ -72,6 +98,24 @@ internal sealed class TcpServerListener
 				_ = Task.Run<Task>(async () =>
 				{
 					using var scope = this.serviceProvider.CreateScope();
+					IChannel? finalChannel = null;
+					if (this.options.ChannelMode.Client == ChannelMode.Standard)
+					{
+						// Standard flow: create a simple TcpChannel
+						var channelFactory = scope.ServiceProvider.GetRequiredService<IChannelFactory>();
+						finalChannel = channelFactory.Create(clientSocket);
+					}
+					else // Split flow
+					{
+						// Pass the socket to the pairing service. It will return a full SplitPortChannel
+						// if the partner socket is ready, otherwise it returns null.
+						var pairingService = scope.ServiceProvider.GetRequiredService<IConnectionPairingService>();
+						finalChannel = pairingService.TryPairConnection(clientSocket, this.listenPort, this.options);
+					}
+
+					// If finalChannel is null, it means we are waiting for a partner connection. Do nothing.
+					if (finalChannel is null) return;
+
 					var connectionHandler = scope.ServiceProvider.GetRequiredService<IConnectionHandler>();
 
 					X509Certificate2? certificate = null;

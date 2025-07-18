@@ -1,5 +1,6 @@
 // Copyright By Hossein Azizollahi All Right Reserved.
 
+using System;
 using System.Collections.Generic;
 using AG.RouterService.SocksService.Application.Abstractions.Authentication;
 using AG.RouterService.SocksService.Application.Abstractions.Channels;
@@ -13,9 +14,11 @@ using AG.RouterService.SocksService.Infrastructure.Listeners;
 using AG.RouterService.SocksService.Infrastructure.Persistence.Repositories;
 using AG.RouterService.SocksService.Infrastructure.Protocols;
 using AG.RouterService.SocksService.Infrastructure.Protocols.CommandHandlers;
+using AG.RouterService.SocksService.Infrastructure.Services;
 using AG.RouterService.SocksService.Infrastructure.Udp;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace AG.RouterService.SocksService.Infrastructure.Extensions;
 
@@ -27,6 +30,16 @@ public static class DependencyInjectionExtensions
 		configuration.GetSection("Listeners").Bind(listenersOptions);
 		services.AddOptions<List<ListenerOptions>>().Bind(configuration.GetSection("SocksListener"));
 		services.AddHostedService<ListenerManagerService>();
+		services.AddSingleton<IConnectionPairingService, ConnectionPairingService>();
+		services.AddHostedService<IHostedService>(provider =>
+		{
+			var hostedService = provider.GetRequiredService<IConnectionPairingService>() as IHostedService;
+			if (hostedService == null)
+			{
+				throw new InvalidOperationException("ConnectionPairingService must implement IHostedService.");
+			}
+			return hostedService;
+		});
 		services.AddSingleton<IChannelFactory, ChannelFactory>();
 		services.AddSingleton<IOutgoingChannelFactory, TcpOutgoingChannelFactory>();
 		services.AddSingleton<ISecureChannelFactory, SslChannelFactory>();

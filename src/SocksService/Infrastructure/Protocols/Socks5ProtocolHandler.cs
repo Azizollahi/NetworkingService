@@ -59,7 +59,7 @@ internal sealed class Socks5ProtocolHandler : IProtocolHandler
 			Memory<byte> commandHeader = new byte[4];
 			await clientChannel.ReadExactlyAsync(commandHeader, cancellationToken);
 
-			Socks5CommandContext context = new Socks5CommandContext(clientChannel, commandHeader);
+			Socks5CommandContext context = new(clientChannel, commandHeader);
 			await this.commandHandlerChain.HandleAsync(context, cancellationToken);
 		}
 		catch (Exception ex)
