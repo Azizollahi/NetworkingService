@@ -46,6 +46,7 @@ public static class DependencyInjectionExtensions
 
 		services.AddSingleton<ISocks5Authenticator, NoAuthenticationAuthenticator>();
 		services.AddSingleton<ISocks5Authenticator, UsernamePasswordAuthenticator>();
+		services.AddSingleton<ISocks5Authenticator, GssapiAuthenticator>();
 
 		services.AddSingleton<ISocks5AddressReader, Socks5AddressReader>();
 		services.AddSingleton<ISocks5ReplyWriter, Socks5ReplyWriter>();
