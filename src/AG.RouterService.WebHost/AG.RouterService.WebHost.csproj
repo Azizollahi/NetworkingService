@@ -31,6 +31,8 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Infrastructure\Persistence\Persistence.csproj" />
+      <ProjectReference Include="..\PrivateNetwork\Application\Application.csproj" />
+      <ProjectReference Include="..\PrivateNetwork\Infrastructure\Infrastructure.csproj" />
       <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
       <ProjectReference Include="..\SocksService\Application\Application.csproj" />
       <ProjectReference Include="..\SocksService\Infrastructure\Infrastructure.csproj" />
