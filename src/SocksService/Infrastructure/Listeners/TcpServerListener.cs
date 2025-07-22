@@ -91,7 +91,7 @@ internal sealed class TcpServerListener
 		try
 		{
 			IPAddress ipAddress = IPAddress.Parse(this.options.Host);
-			IPEndPoint localEndPoint = new IPEndPoint(ipAddress, this.options.Port);
+			IPEndPoint localEndPoint = new IPEndPoint(ipAddress, this.listenPort);
 
 			this.listenerSocket.Bind(localEndPoint);
 			this.listenerSocket.Listen(this.options.Backlog);

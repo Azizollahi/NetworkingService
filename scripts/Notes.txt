@@ -5,13 +5,14 @@ Potential Next Steps 🚀
 3. Access Control: Use the file-based IRepository we designed to create rules for allowing or denying connections based on IP addresses.
 4. Resource Management: Implement connection limits and timeouts to prevent resource exhaustion.
 5. Advanced Logging: Integrate a library like Serilog for structured logging to make diagnostics easier.
-6. Private Network Support (NAT)
-7. Private DNS for local domain resolutions
-8. Tunneling Capabilities (New Module): Implement the ability to tunnel from a specific port to another port, allowing for more flexible routing scenarios. in this new module we should be able to have one-way and split connection mode for both client side and remote server side.
-9. GSSAPI Authentication: Implement GSSAPI for secure authentication, especially useful in enterprise environments.
-10. Distributed Design: Consider a distributed architecture where multiple instances of the SOCKS server can be deployed.
-11. API for Management: Use the WebHost project to add API endpoints for viewing active connections or reloading configuration on the fly.
-12. Blazor Server for Admin UI: Create a Blazor Server application to provide a web-based admin interface for managing the SOCKS server, viewing logs, and monitoring connections.
+6. UDP FULL FLOW
+7. GSSAPI Authentication: Implement GSSAPI for secure authentication, especially useful in enterprise environments.
+8. Private Network Support (NAT)
+9. Private DNS for local domain resolutions
+10. Tunneling Capabilities (New Module): Implement the ability to tunnel from a specific port to another port, allowing for more flexible routing scenarios. in this new module we should be able to have one-way and split connection mode for both client side and remote server side.
+11. Distributed Design: Consider a distributed architecture where multiple instances of the SOCKS server can be deployed.
+12. API for Management: Use the WebHost project to add API endpoints for viewing active connections or reloading configuration on the fly.
+13. Blazor Server for Admin UI: Create a Blazor Server application to provide a web-based admin interface for managing the SOCKS server, viewing logs, and monitoring connections.
 
 ---
 
