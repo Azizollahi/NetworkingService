@@ -26,20 +26,15 @@ public static class DependencyInjectionExtensions
 {
 	public static void AddSocksServiceInfrastructure(this IServiceCollection services, IConfiguration configuration)
 	{
-		var listenersOptions = new List<ListenerOptions>();
-		configuration.GetSection("Listeners").Bind(listenersOptions);
 		services.AddOptions<List<ListenerOptions>>().Bind(configuration.GetSection("Listeners"));
 		services.AddHostedService<ListenerManagerService>();
-		services.AddSingleton<IConnectionPairingService, ConnectionPairingService>();
-		services.AddHostedService<IHostedService>(provider =>
-		{
-			var hostedService = provider.GetRequiredService<IConnectionPairingService>() as IHostedService;
-			if (hostedService == null)
-			{
-				throw new InvalidOperationException("ConnectionPairingService must implement IHostedService.");
-			}
-			return hostedService;
-		});
+
+		services.AddSingleton<ConnectionPairingService>();
+		services.AddSingleton<IConnectionPairingService>(provider =>
+			provider.GetRequiredService<ConnectionPairingService>());
+		services.AddHostedService(provider =>
+			provider.GetRequiredService<ConnectionPairingService>());
+
 		services.AddSingleton<IChannelFactory, ChannelFactory>();
 		services.AddSingleton<IOutgoingChannelFactory, TcpOutgoingChannelFactory>();
 		services.AddSingleton<ISecureChannelFactory, SslChannelFactory>();

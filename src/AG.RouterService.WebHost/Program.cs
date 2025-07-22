@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog;
 
 public class Program
 {
@@ -20,10 +21,14 @@ public class Program
 
 		LoadConfigs(builder);
 
+		builder.Host.UseSerilog((context, services, configuration) => configuration
+			.ReadFrom.Configuration(context.Configuration)
+			.ReadFrom.Services(services)
+			.Enrich.FromLogContext());
+
 		builder.Services.AddControllers();
 		builder.Services.AddEndpointsApiExplorer(); // Required for Swagger
 		builder.Services.AddSwaggerGen(); // Add Swagger for Controllers
-		builder.Services.AddLogging();
 
 		builder.Services.AddMediatR(opt =>
 		{
