@@ -1,6 +1,7 @@
 // Copyright By Hossein Azizollahi All Right Reserved.
 
 using System;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,6 +9,7 @@ namespace AG.RouterService.SocksService.Application.Abstractions.Channels;
 
 public interface IChannel
 {
+	IPEndPoint RemoteEndPoint { get; }
 	bool IsConnected { get; }
 	ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default);
 	ValueTask ReadExactlyAsync(Memory<byte> buffer, CancellationToken cancellationToken = default);

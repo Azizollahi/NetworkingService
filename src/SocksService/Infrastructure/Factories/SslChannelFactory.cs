@@ -33,8 +33,10 @@ internal sealed class SslChannelFactory : ISecureChannelFactory
 			await sslStream.AuthenticateAsServerAsync(certificate, clientCertificateRequired: false, checkCertificateRevocation: true);
 			this.logger.LogInformation("SSL handshake successful. Listener: {Name}, Cipher: {CipherAlgorithm}, Protocol: {SslProtocol}", name, sslStream.CipherAlgorithm, sslStream.SslProtocol);
 
+			var remoteEndPoint = underlyingChannel.RemoteEndPoint;
+
 			// Return the SslStream wrapped in our IChannel interface
-			return new SslChannel(sslStream);
+			return new SslChannel(sslStream, remoteEndPoint);
 		}
 		catch (Exception)
 		{

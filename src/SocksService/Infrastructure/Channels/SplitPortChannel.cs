@@ -2,6 +2,7 @@
 
 using System;
 using System.IO;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +14,8 @@ internal sealed class SplitPortChannel : IChannel
 	{
 		private readonly Socket readSocket;
 		private readonly Socket writeSocket;
+
+		public IPEndPoint RemoteEndPoint => (IPEndPoint)readSocket.RemoteEndPoint!;
 
 		public SplitPortChannel(Socket readSocket, Socket writeSocket)
 		{

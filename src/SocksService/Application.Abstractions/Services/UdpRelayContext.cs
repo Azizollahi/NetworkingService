@@ -1,15 +1,14 @@
 // Copyright By Hossein Azizollahi All Right Reserved.
 
+using System;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace AG.RouterService.SocksService.Application.Abstractions.Services;
 
-public class UdpRelayContext
+public abstract class UdpRelayContext : IAsyncDisposable
 {
-	public IPEndPoint BoundEndpoint { get; }
-
-	public UdpRelayContext(IPEndPoint boundEndpoint)
-	{
-		this.BoundEndpoint = boundEndpoint;
-	}
+	public abstract IPEndPoint BoundEndpoint { get; }
+	public abstract Task StartRelayLoopAsync();
+	public abstract ValueTask DisposeAsync();
 }

@@ -43,10 +43,11 @@ internal sealed class UdpAssociateCommandHandler : AbstractSocks5CommandHandler
 
 			try
 			{
-				// 1. Start a new UDP relay session.
-				UdpRelayContext udpContext = await this.udpRelayService.StartUdpRelaySessionAsync(cancellationToken);
+				IPEndPoint clientEndpoint = context.ClientChannel.RemoteEndPoint;
 
-				// 2. Send a success reply containing the IP and port of the new UDP listener.
+				// 1. Create a new UDP relay session.
+				await using var udpContext = await udpRelayService.CreateUdpRelaySessionAsync(clientEndpoint, cancellationToken);
+				// 2. Send a success reply...
 				await this.replyWriter.SendReplyAsync(
 					context.ClientChannel,
 					Socks5Constants.ReplySucceeded,
@@ -54,12 +55,8 @@ internal sealed class UdpAssociateCommandHandler : AbstractSocks5CommandHandler
 					udpContext.BoundEndpoint.Port,
 					cancellationToken);
 
-				this.logger.LogInformation("UDP association established. Holding TCP connection open for session lifetime.");
-
-				// 3. Hold the TCP connection open. The UDP relay runs in the background.
-				// The relay's CancellationToken is tied to this connection. When this
-				// delay is cancelled (by client disconnect), the relay will stop.
-				await Task.Delay(-1, cancellationToken);
+				// 3. Start the relay loop and hold the TCP connection open.
+				await udpContext.StartRelayLoopAsync();
 			}
 			catch (OperationCanceledException)
 			{

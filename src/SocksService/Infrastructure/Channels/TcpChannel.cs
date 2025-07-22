@@ -2,6 +2,7 @@
 
 using System;
 using System.IO;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ namespace AG.RouterService.SocksService.Infrastructure.Channels;
 internal sealed class TcpChannel : IChannel
 {
 	private readonly Socket socket;
+	public IPEndPoint RemoteEndPoint => (IPEndPoint)socket.RemoteEndPoint!;
 
 	public TcpChannel(Socket socket)
 	{

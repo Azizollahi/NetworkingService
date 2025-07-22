@@ -2,6 +2,7 @@
 
 using System;
 using System.IO;
+using System.Net;
 using System.Net.Security;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,9 +14,12 @@ internal sealed class SslChannel : IChannel
 {
 	private readonly SslStream sslStream;
 
-	public SslChannel(SslStream sslStream)
+	public IPEndPoint RemoteEndPoint { get; }
+
+	public SslChannel(SslStream sslStream, IPEndPoint remoteEndPoint)
 	{
 		this.sslStream = sslStream;
+		RemoteEndPoint = remoteEndPoint; // Set the property
 	}
 
 	public bool IsConnected => true; // SslStream does not expose a simple connected property. Assume true if instantiated.
