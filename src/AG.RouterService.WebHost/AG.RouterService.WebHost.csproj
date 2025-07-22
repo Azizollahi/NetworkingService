@@ -30,7 +30,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\AuthService\Application\Application.csproj" />
+      <ProjectReference Include="..\AuthService\Infrastructure\Infrastructure.csproj" />
       <ProjectReference Include="..\Infrastructure\Persistence\Persistence.csproj" />
+      <ProjectReference Include="..\Infrastructure\Shared\Shared.csproj" />
       <ProjectReference Include="..\PrivateNetwork\Application\Application.csproj" />
       <ProjectReference Include="..\PrivateNetwork\Infrastructure\Infrastructure.csproj" />
       <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />

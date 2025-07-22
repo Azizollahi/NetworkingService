@@ -2,10 +2,8 @@
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <AssemblyName>AG.RouterService.PrivateNetwork.Application.Abstractions</AssemblyName>
-        <RootNamespace>AG.RouterService.PrivateNetwork.Application.Abstractions</RootNamespace>
+        <AssemblyName>AG.RouterService.AuthService.Application.Abstractions</AssemblyName>
+        <RootNamespace>AG.RouterService.AuthService.Application.Abstractions</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

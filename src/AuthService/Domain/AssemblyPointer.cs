@@ -1,4 +1,4 @@
-﻿namespace AG.RouterService.PrivateNetwork.Domain;
+﻿namespace AG.RouterService.AuthService.Domain;
 
 public class AssemblyPointer
 {

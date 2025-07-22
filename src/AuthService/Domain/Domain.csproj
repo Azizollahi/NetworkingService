@@ -2,10 +2,8 @@
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <AssemblyName>AG.RouterService.PrivateNetwork.Domain</AssemblyName>
-        <RootNamespace>AG.RouterService.PrivateNetwork.Domain</RootNamespace>
+        <AssemblyName>AG.RouterService.AuthService.Domain</AssemblyName>
+        <RootNamespace>AG.RouterService.AuthService.Domain</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

@@ -2,14 +2,13 @@
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <AssemblyName>AG.RouterService.PrivateNetwork.Infrastructure</AssemblyName>
-        <RootNamespace>AG.RouterService.PrivateNetwork.Infrastructure</RootNamespace>
+        <AssemblyName>AG.RouterService.AuthService.Infrastructure</AssemblyName>
+        <RootNamespace>AG.RouterService.AuthService.Infrastructure</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\Infrastructure\Persistence\Persistence.csproj" />
+      <ProjectReference Include="..\..\Infrastructure\Shared\Shared.csproj" />
       <ProjectReference Include="..\Application.Abstractions\Application.Abstractions.csproj" />
       <ProjectReference Include="..\Domain\Domain.csproj" />
     </ItemGroup>
