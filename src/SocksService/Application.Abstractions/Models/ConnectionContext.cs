@@ -1,5 +1,6 @@
 // Copyright By Hossein Azizollahi All Right Reserved.
 
+using System;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 
@@ -12,12 +13,14 @@ public class ConnectionContext
 	public Socket ClientSocket { get; }
 	public bool IsSslEnabled { get; }
 	public X509Certificate2? Certificate { get; }
+	public TimeSpan IdleTimeout { get; }
 
-	public ConnectionContext(string name, Socket clientSocket, bool isSslEnabled, X509Certificate2? certificate)
+	public ConnectionContext(string name, Socket clientSocket, bool isSslEnabled, X509Certificate2? certificate, TimeSpan idleTimeout)
 	{
 		Name = name;
-		this.ClientSocket = clientSocket;
-		this.IsSslEnabled = isSslEnabled;
-		this.Certificate = certificate;
+		ClientSocket = clientSocket;
+		IsSslEnabled = isSslEnabled;
+		Certificate = certificate;
+		IdleTimeout = idleTimeout;
 	}
 }

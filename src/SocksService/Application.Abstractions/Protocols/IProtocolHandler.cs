@@ -10,5 +10,5 @@ namespace AG.RouterService.SocksService.Application.Abstractions.Protocols;
 public interface IProtocolHandler
 {
 	bool CanHandle(ReadOnlySpan<byte> initialBytes);
-	Task HandleConnectionAsync(IChannel clientChannel, ReadOnlyMemory<byte> initialBytes, CancellationToken cancellationToken);
+	Task HandleConnectionAsync(IChannel clientChannel, ReadOnlyMemory<byte> initialBytes, TimeSpan idleTimeout, CancellationToken cancellationToken);
 }

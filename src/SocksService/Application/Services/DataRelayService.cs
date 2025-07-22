@@ -18,13 +18,13 @@ internal sealed class DataRelayService : IDataRelayService
 		this.logger = logger;
 	}
 
-	public async Task RelayAsync(IChannel clientChannel, IChannel targetChannel, CancellationToken cancellationToken)
+	public async Task RelayAsync(IChannel clientChannel, IChannel targetChannel, TimeSpan idleTimeout,CancellationToken cancellationToken)
 	{
-		this.logger.LogInformation("Starting data relay between client and target");
+		logger.LogInformation("Starting data relay between client and target");
 		try
 		{
-			Task clientToTarget = RelayDataAsync(clientChannel, targetChannel, cancellationToken);
-			Task targetToClient = RelayDataAsync(targetChannel, clientChannel, cancellationToken);
+			Task clientToTarget = RelayDataAsync(clientChannel, targetChannel, idleTimeout, cancellationToken);
+			Task targetToClient = RelayDataAsync(targetChannel, clientChannel, idleTimeout, cancellationToken);
 
 			await Task.WhenAny(clientToTarget, targetToClient);
 		}
@@ -40,12 +40,20 @@ internal sealed class DataRelayService : IDataRelayService
 		}
 	}
 
-	private static async Task RelayDataAsync(IChannel source, IChannel destination, CancellationToken cancellationToken)
+	private static async Task RelayDataAsync(IChannel source, IChannel destination, TimeSpan idleTimeout, CancellationToken cancellationToken)
 	{
 		byte[] buffer = new byte[8192]; // 8KB buffer
 		while (true)
 		{
-			int bytesRead = await source.ReadAsync(buffer, cancellationToken);
+			var readTask = source.ReadAsync(buffer, cancellationToken).AsTask();
+			var timeoutTask = Task.Delay(idleTimeout, cancellationToken);
+			var completedTask = await Task.WhenAny(readTask, timeoutTask);
+			if (completedTask == timeoutTask)
+			{
+				// Timeout occurred
+				throw new TimeoutException("Connection was idle for too long.");
+			}
+			int bytesRead = await readTask;
 			if (bytesRead == 0)
 			{
 				break; // Connection closed

@@ -1,5 +1,6 @@
 // Copyright By Hossein Azizollahi All Right Reserved.
 
+using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -72,12 +73,12 @@ internal sealed class ConnectCommandHandler : AbstractSocks5CommandHandler
 			// For now, we send a generic success reply.
 			await replyWriter.SendReplyAsync(context.ClientChannel, Socks5Constants.ReplySucceeded, IPAddress.Any, 0, cancellationToken);
 
-			await this.dataRelayService.RelayAsync(context.ClientChannel, targetChannel, cancellationToken);
+			await dataRelayService.RelayAsync(context.ClientChannel, targetChannel, context.IdleTimeout, cancellationToken);
 		}
 		catch (UnsupportedAddressTypeException ex)
 		{
-			this.logger.LogWarning(ex.Message);
-			await this.replyWriter.SendReplyAsync(context.ClientChannel, Socks5Constants.ReplyAddressTypeNotSupported, IPAddress.Any, 0, cancellationToken);
+			logger.LogWarning(ex.Message);
+			await replyWriter.SendReplyAsync(context.ClientChannel, Socks5Constants.ReplyAddressTypeNotSupported, IPAddress.Any, 0, cancellationToken);
 		}
 
 	}

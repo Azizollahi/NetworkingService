@@ -28,7 +28,7 @@ public static class DependencyInjectionExtensions
 	{
 		var listenersOptions = new List<ListenerOptions>();
 		configuration.GetSection("Listeners").Bind(listenersOptions);
-		services.AddOptions<List<ListenerOptions>>().Bind(configuration.GetSection("SocksListener"));
+		services.AddOptions<List<ListenerOptions>>().Bind(configuration.GetSection("Listeners"));
 		services.AddHostedService<ListenerManagerService>();
 		services.AddSingleton<IConnectionPairingService, ConnectionPairingService>();
 		services.AddHostedService<IHostedService>(provider =>
@@ -47,6 +47,7 @@ public static class DependencyInjectionExtensions
 		services.AddSingleton<IProtocolHandler, Socks5ProtocolHandler>();
 
 		services.AddSingleton<IProtocolHandler, Socks4ProtocolHandler>();
+		services.AddSingleton<IConnectionManagerService, ConnectionManagerService>();
 
 		services.AddSingleton<ISocks5Authenticator, NoAuthenticationAuthenticator>();
 		services.AddSingleton<ISocks5Authenticator, UsernamePasswordAuthenticator>();

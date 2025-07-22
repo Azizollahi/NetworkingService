@@ -41,6 +41,12 @@ public sealed class SslOptions
 	public string CertificatePassword { get; set; } = string.Empty;
 }
 
+public sealed class ResourceManagementOptions
+{
+	public int MaxConcurrentConnections { get; set; } = 1000;
+	public int IdleTimeoutSeconds { get; set; } = 300;
+}
+
 public sealed class ListenerOptions
 {
 	public string Name { get; set; } = "DefaultListener";
@@ -54,6 +60,8 @@ public sealed class ListenerOptions
 
 	public ChannelModeOptions ChannelMode { get; set; } = new();
 	public ClientSplitPortsOptions? ClientSplitPorts { get; set; }
+
+	public ResourceManagementOptions ResourceManagement { get; set; } = new();
 
 }
 
@@ -98,40 +106,59 @@ internal sealed class TcpServerListener
 				_ = Task.Run<Task>(async () =>
 				{
 					using var scope = this.serviceProvider.CreateScope();
-					IChannel? finalChannel = null;
-					if (this.options.ChannelMode.Client == ChannelMode.Standard)
+					var connectionManager = scope.ServiceProvider.GetRequiredService<IConnectionManagerService>();
+
+					// Check the connection limit
+					if (!connectionManager.TryAcceptConnection(this.options.Name, this.options.ResourceManagement.MaxConcurrentConnections))
 					{
-						// Standard flow: create a simple TcpChannel
-						var channelFactory = scope.ServiceProvider.GetRequiredService<IChannelFactory>();
-						finalChannel = channelFactory.Create(clientSocket);
-					}
-					else // Split flow
-					{
-						// Pass the socket to the pairing service. It will return a full SplitPortChannel
-						// if the partner socket is ready, otherwise it returns null.
-						var pairingService = scope.ServiceProvider.GetRequiredService<IConnectionPairingService>();
-						finalChannel = pairingService.TryPairConnection(clientSocket, this.listenPort, this.options);
+						this.logger.LogWarning("Connection limit reached for listener '{Name}'. Rejecting new connection.", this.options.Name);
+						clientSocket.Close();
+						return;
 					}
 
-					// If finalChannel is null, it means we are waiting for a partner connection. Do nothing.
-					if (finalChannel is null) return;
-
-					var connectionHandler = scope.ServiceProvider.GetRequiredService<IConnectionHandler>();
-
-					X509Certificate2? certificate = null;
-					if (this.options.EnableSsl)
+					try
 					{
-						// Load the certificate here in the Infrastructure layer
-						certificate = X509CertificateLoader.LoadPkcs12FromFile(
-							this.options.SslOptions!.CertificatePath,
-							this.options.SslOptions.CertificatePassword,
-							X509KeyStorageFlags.EphemeralKeySet);
-					}
+						IChannel? finalChannel = null;
+						if (this.options.ChannelMode.Client == ChannelMode.Standard)
+						{
+							// Standard flow: create a simple TcpChannel
+							var channelFactory = scope.ServiceProvider.GetRequiredService<IChannelFactory>();
+							finalChannel = channelFactory.Create(clientSocket);
+						}
+						else // Split flow
+						{
+							// Pass the socket to the pairing service. It will return a full SplitPortChannel
+							// if the partner socket is ready, otherwise it returns null.
+							var pairingService = scope.ServiceProvider.GetRequiredService<IConnectionPairingService>();
+							finalChannel = pairingService.TryPairConnection(clientSocket, this.listenPort, this.options);
+						}
 
-					// Create the context object
-					var context = new ConnectionContext(options.Name, clientSocket, this.options.EnableSsl, certificate);
-					// Pass the options for this specific listener to the handler
-					await connectionHandler.HandleConnectionAsync(context, stoppingToken);
+						// If finalChannel is null, it means we are waiting for a partner connection. Do nothing.
+						if (finalChannel is null) return;
+
+						var connectionHandler = scope.ServiceProvider.GetRequiredService<IConnectionHandler>();
+
+						X509Certificate2? certificate = null;
+						if (this.options.EnableSsl)
+						{
+							// Load the certificate here in the Infrastructure layer
+							certificate = X509CertificateLoader.LoadPkcs12FromFile(
+								this.options.SslOptions!.CertificatePath,
+								this.options.SslOptions.CertificatePassword,
+								X509KeyStorageFlags.EphemeralKeySet);
+						}
+
+						// Create the context object
+						var idleTimeout = TimeSpan.FromSeconds(options.ResourceManagement.IdleTimeoutSeconds);
+						var context = new ConnectionContext(options.Name, clientSocket, this.options.EnableSsl,
+							certificate, idleTimeout);
+						// Pass the options for this specific listener to the handler
+						await connectionHandler.HandleConnectionAsync(context, stoppingToken);
+					}
+					finally
+					{
+						connectionManager.ReleaseConnection(options.Name);
+					}
 				}, stoppingToken);
 			}
 		}

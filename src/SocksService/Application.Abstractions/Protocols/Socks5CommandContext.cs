@@ -10,10 +10,12 @@ public class Socks5CommandContext
 	public IChannel ClientChannel { get; }
 	public ReadOnlyMemory<byte> CommandHeader { get; }
 	public byte Command => CommandHeader.Span[1];
+	public TimeSpan IdleTimeout { get; }
 
-	public Socks5CommandContext(IChannel clientChannel, ReadOnlyMemory<byte> commandHeader)
+	public Socks5CommandContext(IChannel clientChannel, ReadOnlyMemory<byte> commandHeader, TimeSpan idleTimeout)
 	{
-		this.ClientChannel = clientChannel;
-		this.CommandHeader = commandHeader;
+		ClientChannel = clientChannel;
+		CommandHeader = commandHeader;
+		IdleTimeout = idleTimeout;
 	}
 }

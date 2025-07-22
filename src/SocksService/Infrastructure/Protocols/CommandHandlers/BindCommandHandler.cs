@@ -89,7 +89,7 @@ internal sealed class BindCommandHandler : AbstractSocks5CommandHandler
 
 				// 5. Create a channel for the new connection and start relaying data.
 				targetChannel = this.channelFactory.Create(targetSocket);
-				await this.dataRelayService.RelayAsync(context.ClientChannel, targetChannel, cancellationToken);
+				await this.dataRelayService.RelayAsync(context.ClientChannel, targetChannel, context.IdleTimeout, cancellationToken);
 			}
 			catch (UnsupportedAddressTypeException ex)
 			{

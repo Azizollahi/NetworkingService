@@ -55,7 +55,7 @@ internal sealed class ConnectionHandlerService : IConnectionHandler
 				channel = await secureChannelFactory.CreateSecureChannelAsync(context.Name, channel, context.Certificate!, cancellationToken);
 			}
 
-			await protocolDispatcher.DispatchAsync(channel, cancellationToken);
+			await protocolDispatcher.DispatchAsync(channel, context.IdleTimeout, cancellationToken);
 		}
 		catch (Exception ex)
 		{

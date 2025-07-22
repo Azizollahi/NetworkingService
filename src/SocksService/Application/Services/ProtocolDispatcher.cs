@@ -22,7 +22,7 @@ internal sealed class ProtocolDispatcher : IProtocolDispatcher
 		this.logger = logger;
 	}
 
-	public async Task DispatchAsync(IChannel channel, CancellationToken cancellationToken)
+	public async Task DispatchAsync(IChannel channel, TimeSpan idleTimeout, CancellationToken cancellationToken)
 	{
 		// Peek at the first few bytes to identify the protocol without consuming the data.
 		byte[] initialBytes = new byte[8];
@@ -47,6 +47,6 @@ internal sealed class ProtocolDispatcher : IProtocolDispatcher
 		}
 
 		this.logger.LogInformation("Dispatching connection to {HandlerName}", handler.GetType().Name);
-		await handler.HandleConnectionAsync(channel, initialData, cancellationToken);
+		await handler.HandleConnectionAsync(channel, initialData, idleTimeout, cancellationToken);
 	}
 }

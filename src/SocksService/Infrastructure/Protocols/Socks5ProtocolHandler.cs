@@ -44,7 +44,7 @@ internal sealed class Socks5ProtocolHandler : IProtocolHandler
 	}
 
 	public async Task HandleConnectionAsync(IChannel clientChannel, ReadOnlyMemory<byte> initialBytes,
-		CancellationToken cancellationToken)
+		TimeSpan idleTimeout, CancellationToken cancellationToken)
 	{
 		try
 		{
@@ -59,7 +59,7 @@ internal sealed class Socks5ProtocolHandler : IProtocolHandler
 			Memory<byte> commandHeader = new byte[4];
 			await clientChannel.ReadExactlyAsync(commandHeader, cancellationToken);
 
-			Socks5CommandContext context = new(clientChannel, commandHeader);
+			Socks5CommandContext context = new(clientChannel, commandHeader, idleTimeout);
 			await this.commandHandlerChain.HandleAsync(context, cancellationToken);
 		}
 		catch (Exception ex)
@@ -84,7 +84,7 @@ internal sealed class Socks5ProtocolHandler : IProtocolHandler
 			.Where(a => listenerOptions.Value.AllowedAuthMethods.Contains(a.Method));
 
 		// Find a method supported by both client and server
-		ISocks5Authenticator? selectedAuthenticator = this.authenticators
+		ISocks5Authenticator? selectedAuthenticator = enabledAuthenticators
 			.OrderBy(a => a.Method) // Optional: prefer a certain auth method
 			.FirstOrDefault(a => clientMethods.Span.Contains(a.Method));
 

@@ -41,7 +41,7 @@ internal sealed class Socks4ProtocolHandler : IProtocolHandler
 		return initialBytes.Length > 0 && initialBytes[0] == Socks4Constants.Version;
 	}
 
-	public async Task HandleConnectionAsync(IChannel clientChannel, ReadOnlyMemory<byte> initialBytes,
+	public async Task HandleConnectionAsync(IChannel clientChannel, ReadOnlyMemory<byte> initialBytes, TimeSpan idleTimeout,
 		CancellationToken cancellationToken)
 	{
 		try
@@ -50,10 +50,10 @@ internal sealed class Socks4ProtocolHandler : IProtocolHandler
 			switch (command)
 			{
 				case Socks4Constants.CommandConnect:
-					await HandleConnectCommandAsync(clientChannel, cancellationToken);
+					await HandleConnectCommandAsync(clientChannel, idleTimeout, cancellationToken);
 					break;
 				case Socks4Constants.CommandBind:
-					await HandleBindCommandAsync(clientChannel, cancellationToken);
+					await HandleBindCommandAsync(clientChannel, idleTimeout, cancellationToken);
 					break;
 				default:
 					this.logger.LogWarning("Unsupported SOCKS4 command received: {Command}", command);
@@ -72,7 +72,7 @@ internal sealed class Socks4ProtocolHandler : IProtocolHandler
 		}
 	}
 
-	private async Task HandleConnectCommandAsync(IChannel clientChannel, CancellationToken cancellationToken)
+	private async Task HandleConnectCommandAsync(IChannel clientChannel, TimeSpan idleTimeout, CancellationToken cancellationToken)
 	{
 		(string? host, int port) = await ReadCommandBodyAsync(clientChannel, cancellationToken);
 		if (host is null) return;
@@ -94,10 +94,10 @@ internal sealed class Socks4ProtocolHandler : IProtocolHandler
 		}
 
 		await SendReplyAsync(clientChannel, Socks4Constants.ReplyGranted, port, IPAddress.Any, cancellationToken);
-		await this.dataRelayService.RelayAsync(clientChannel, targetChannel, cancellationToken);
+		await this.dataRelayService.RelayAsync(clientChannel, targetChannel, idleTimeout, cancellationToken);
 	}
 
-	private async Task HandleBindCommandAsync(IChannel clientChannel, CancellationToken cancellationToken)
+	private async Task HandleBindCommandAsync(IChannel clientChannel, TimeSpan idleTimeout, CancellationToken cancellationToken)
 	{
 		(string? expectedHost, int port) = await ReadCommandBodyAsync(clientChannel, cancellationToken);
 		if (expectedHost is null) return;
@@ -141,7 +141,7 @@ internal sealed class Socks4ProtocolHandler : IProtocolHandler
 			await SendReplyAsync(clientChannel, Socks4Constants.ReplyGranted, listeningEndpoint.Port, listeningEndpoint.Address, cancellationToken);
 
 			targetChannel = this.channelFactory.Create(targetSocket);
-			await this.dataRelayService.RelayAsync(clientChannel, targetChannel, cancellationToken);
+			await this.dataRelayService.RelayAsync(clientChannel, targetChannel, idleTimeout, cancellationToken);
 		}
 		catch (Exception ex) when (ex is not OperationCanceledException)
 		{
