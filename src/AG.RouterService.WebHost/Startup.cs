@@ -2,6 +2,8 @@
 
 using AG.RouterService.AuthService.Infrastructure.Extensions;
 using AG.RouterService.Infrastructure.Persistence.Extensions;
+using AG.RouterService.PrivateNetwork.Application.Extensions;
+using AG.RouterService.PrivateNetwork.Infrastructure.Extensions;
 using AG.RouterService.SocksService.Application.Extensions;
 using AG.RouterService.SocksService.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Builder;
@@ -37,7 +39,8 @@ public class Startup
 		services.AddAuthServiceInfrastructure(configuration);
 
 		// PrivateNetwork Module
-
+		services.AddPrivateNetworkApplication(configuration);
+		services.AddPrivateNetworkInfrastructure(configuration);
 	}
 
 	public void ConfigureHost(ConfigureHostBuilder builder)
