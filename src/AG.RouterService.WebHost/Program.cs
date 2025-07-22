@@ -1,13 +1,14 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System;
-using AG.RouterService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
+
+namespace AG.RouterService;
 
 public class Program
 {
