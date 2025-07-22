@@ -11,11 +11,13 @@ public class Socks5CommandContext
 	public ReadOnlyMemory<byte> CommandHeader { get; }
 	public byte Command => CommandHeader.Span[1];
 	public TimeSpan IdleTimeout { get; }
+	public string? AuthenticatedUsername { get; }
 
-	public Socks5CommandContext(IChannel clientChannel, ReadOnlyMemory<byte> commandHeader, TimeSpan idleTimeout)
+	public Socks5CommandContext(IChannel clientChannel, ReadOnlyMemory<byte> commandHeader, TimeSpan idleTimeout, string? username)
 	{
 		ClientChannel = clientChannel;
 		CommandHeader = commandHeader;
 		IdleTimeout = idleTimeout;
+		AuthenticatedUsername = username;
 	}
 }

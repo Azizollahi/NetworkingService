@@ -8,13 +8,15 @@ public class AuthenticationResult
 {
 	public bool IsSuccess { get; }
 	public IChannel Channel { get; }
+	public string? Username { get; } // Add this property
 
-	private AuthenticationResult(bool isSuccess, IChannel channel)
+	private AuthenticationResult(bool isSuccess, IChannel channel, string? username)
 	{
 		IsSuccess = isSuccess;
 		Channel = channel;
+		Username = username;
 	}
 
-	public static AuthenticationResult Success(IChannel channel) => new(true, channel);
-	public static AuthenticationResult Failure(IChannel channel) => new(false, channel);
+	public static AuthenticationResult Success(IChannel channel, string? username = null) => new(true, channel, username);
+	public static AuthenticationResult Failure(IChannel channel) => new(false, channel, null);
 }

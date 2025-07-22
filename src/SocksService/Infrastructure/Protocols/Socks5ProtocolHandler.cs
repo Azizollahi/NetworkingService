@@ -66,7 +66,7 @@ internal sealed class Socks5ProtocolHandler : IProtocolHandler
 			await sessionChannel.ReadExactlyAsync(commandHeader, cancellationToken);
 
 			// Use the sessionChannel from here on
-			Socks5CommandContext context = new(sessionChannel, commandHeader, idleTimeout);
+			var context = new Socks5CommandContext(sessionChannel, commandHeader, idleTimeout, authResult.Username);
 			await this.commandHandlerChain.HandleAsync(context, cancellationToken);
 		}
 		catch (Exception ex)

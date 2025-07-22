@@ -61,7 +61,7 @@ internal sealed class UsernamePasswordAuthenticator : ISocks5Authenticator
 				logger.LogWarning("SOCKS5 authentication failed for user: {Username}", username);
 			}
 
-			return isValid ? AuthenticationResult.Success(clientChannel) : AuthenticationResult.Failure(clientChannel);
+			return isValid ? AuthenticationResult.Success(clientChannel, username) : AuthenticationResult.Failure(clientChannel);
 		}
 		catch(EndOfStreamException)
 		{

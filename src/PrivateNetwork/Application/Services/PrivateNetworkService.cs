@@ -1,18 +1,13 @@
 // Copyright By Hossein Azizollahi All Right Reserved.
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using AG.RouterService.AuthService.Application.Abstractions.Repositories;
 using AG.RouterService.PrivateNetwork.Application.Abstractions.Repositories;
+using AG.RouterService.PrivateNetwork.Application.Abstractions.Services;
 
 namespace AG.RouterService.PrivateNetwork.Application.Services;
-
-public interface IPrivateNetworkService
-{
-	Task<Domain.PrivateNetwork> CreateNetworkAsync(string name, string cidrRange);
-	Task<bool> AddUserToNetworkAsync(string username, string networkId);
-	Task<bool> RemoveUserFromNetworkAsync(string username, string networkId);
-}
 
 internal sealed class PrivateNetworkService : IPrivateNetworkService
 {
@@ -59,5 +54,26 @@ internal sealed class PrivateNetworkService : IPrivateNetworkService
 		network.RemoveMember(username);
 		await networkRepository.UpdateAsync(network);
 		return true;
+	}
+	public async Task<bool> IsConnectionAllowedAsync(string sourceUsername, string destinationIp)
+	{
+		var allNetworks = await this.networkRepository.GetAllAsync();
+
+		// Find all networks the source user is a member of
+		var userNetworks = allNetworks.Where(n =>
+			n.Members.Any(m => m.Username.Equals(sourceUsername, StringComparison.OrdinalIgnoreCase)));
+
+		foreach (var network in userNetworks)
+		{
+			// Check if the destination IP belongs to another member in the SAME network
+			if (network.Members.Any(m => m.AssignedIp == destinationIp))
+			{
+				// The destination is a valid member of a network the source user belongs to.
+				return true;
+			}
+		}
+
+		// If we get here, no shared network was found that contains the destination IP.
+		return false;
 	}
 }

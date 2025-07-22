@@ -4,6 +4,7 @@ using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using AG.RouterService.PrivateNetwork.Application.Abstractions.Services;
 using AG.RouterService.SocksService.Application.Abstractions.Channels;
 using AG.RouterService.SocksService.Application.Abstractions.Exceptions;
 using AG.RouterService.SocksService.Application.Abstractions.Protocols;
@@ -20,13 +21,14 @@ internal sealed class ConnectCommandHandler : AbstractSocks5CommandHandler
 	private readonly ISocks5AddressReader addressReader;
 	private readonly ISocks5ReplyWriter replyWriter;
 	private readonly IAccessControlService accessControlService;
+	private readonly IPrivateNetworkService privateNetworkService;
 	public ConnectCommandHandler(
 		ILogger<ConnectCommandHandler> logger,
 		IOutgoingChannelFactory channelFactory,
 		IDataRelayService dataRelayService,
 		ISocks5AddressReader addressReader,
 		ISocks5ReplyWriter replyWriter,
-		IAccessControlService accessControlService)
+		IAccessControlService accessControlService, IPrivateNetworkService privateNetworkService)
 	{
 		this.logger = logger;
 		this.channelFactory = channelFactory;
@@ -34,6 +36,7 @@ internal sealed class ConnectCommandHandler : AbstractSocks5CommandHandler
 		this.addressReader = addressReader;
 		this.replyWriter = replyWriter;
 		this.accessControlService = accessControlService;
+		this.privateNetworkService = privateNetworkService;
 	}
 
 	public override async Task HandleAsync(Socks5CommandContext context, CancellationToken cancellationToken)
@@ -54,15 +57,34 @@ internal sealed class ConnectCommandHandler : AbstractSocks5CommandHandler
 				// Error occurred and reply was already sent by the helper.
 				return;
 			}
+			bool isPrivateDestination = IPAddress.TryParse(host, out var ipAddress) && IsPrivateIp(ipAddress);
 
-			if (!await this.accessControlService.IsDestinationAllowedAsync(host))
+			if (isPrivateDestination)
 			{
-				this.logger.LogWarning("Connection to destination {Host} denied by access rules.", host);
-				await this.replyWriter.SendReplyAsync(context.ClientChannel, Socks5Constants.ReplyConnectionNotAllowed, IPAddress.Any, 0, cancellationToken);
+				// For private destinations, we use the Private Network rules.
+				// Requires an authenticated user.
+				if (context.AuthenticatedUsername is null)
+				{
+					logger.LogWarning("Anonymous user attempted to connect to private IP {Host}. Denied.", host);
+					await replyWriter.SendReplyAsync(context.ClientChannel, Socks5Constants.ReplyConnectionNotAllowed, IPAddress.Any, 0, cancellationToken);
+					return;
+				}
+
+				if (!await privateNetworkService.IsConnectionAllowedAsync(context.AuthenticatedUsername, host))
+				{
+					logger.LogWarning("User {User} connection to private destination {Host} denied by network rules.", context.AuthenticatedUsername, host);
+					await replyWriter.SendReplyAsync(context.ClientChannel, Socks5Constants.ReplyConnectionNotAllowed, IPAddress.Any, 0, cancellationToken);
+					return;
+				}
+			}
+			else if (!await accessControlService.IsDestinationAllowedAsync(host))
+			{
+				logger.LogWarning("Connection to destination {Host} denied by access rules.", host);
+				await replyWriter.SendReplyAsync(context.ClientChannel, Socks5Constants.ReplyConnectionNotAllowed, IPAddress.Any, 0, cancellationToken);
 				return;
 			}
 
-			IChannel? targetChannel = await this.channelFactory.CreateConnectionAsync(host, port, cancellationToken);
+			IChannel? targetChannel = await channelFactory.CreateConnectionAsync(host, port, cancellationToken);
 			if (targetChannel is null)
 			{
 				await replyWriter.SendReplyAsync(context.ClientChannel, Socks5Constants.ReplyConnectionRefused, IPAddress.Any, 0, cancellationToken);
@@ -81,5 +103,17 @@ internal sealed class ConnectCommandHandler : AbstractSocks5CommandHandler
 			await replyWriter.SendReplyAsync(context.ClientChannel, Socks5Constants.ReplyAddressTypeNotSupported, IPAddress.Any, 0, cancellationToken);
 		}
 
+	}
+	private bool IsPrivateIp(IPAddress ipAddress)
+	{
+		// Basic check for common private IP ranges.
+		var bytes = ipAddress.GetAddressBytes();
+		switch (bytes[0])
+		{
+			case 10: return true;
+			case 172: return bytes[1] >= 16 && bytes[1] < 32;
+			case 192: return bytes[1] == 168;
+			default: return false;
+		}
 	}
 }
