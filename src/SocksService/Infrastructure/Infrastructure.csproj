@@ -16,8 +16,14 @@
 	</ItemGroup>
 	
     <ItemGroup>
+      <ProjectReference Include="..\..\AuthService\Application.Abstractions\Application.Abstractions.csproj" />
+      <ProjectReference Include="..\..\PrivateNetwork\Application.Abstractions\Application.Abstractions.csproj" />
       <ProjectReference Include="..\Application.Abstractions\Application.Abstractions.csproj" />
       <ProjectReference Include="..\Domain\Domain.csproj" />
+    </ItemGroup>
+	
+    <ItemGroup>
+      <Folder Include="Persistence\" />
     </ItemGroup>
 
 </Project>

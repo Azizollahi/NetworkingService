@@ -1,5 +1,6 @@
 // Copyright By Hossein Azizollahi All Right Reserved.
 
+using AG.RouterService.AuthService.Infrastructure.Extensions;
 using AG.RouterService.Infrastructure.Persistence.Extensions;
 using AG.RouterService.SocksService.Application.Extensions;
 using AG.RouterService.SocksService.Infrastructure.Extensions;
@@ -25,9 +26,18 @@ public class Startup
 
 	public void ConfigureServices(IServiceCollection services)
 	{
+		// Shared
 		services.AddPersistence(configuration);
+
+		// SocksService Module
 		services.AddSocksServiceApplication(configuration);
 		services.AddSocksServiceInfrastructure(configuration);
+
+		// AuthService Module
+		services.AddAuthServiceInfrastructure(configuration);
+
+		// PrivateNetwork Module
+
 	}
 
 	public void ConfigureHost(ConfigureHostBuilder builder)

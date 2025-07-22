@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using AG.RouterService.AuthService.Application.Abstractions.Repositories;
 using AG.RouterService.SocksService.Application.Abstractions.Authentication;
 using AG.RouterService.SocksService.Application.Abstractions.Channels;
 using AG.RouterService.SocksService.Application.Abstractions.Factories;
@@ -54,7 +55,7 @@ public static class DependencyInjectionExtensions
 		services.AddOptions<PersistenceOptions>()
 			.Bind(configuration.GetSection("Persistence"));
 
-		services.AddSingleton<IUserValidator, UserRepository>();
+		services.AddSingleton<IUserValidator>(provider => provider.GetRequiredService<IUserRepository>());
 
 		services.AddSingleton<IUdpRelayService, UdpRelayService>();
 
