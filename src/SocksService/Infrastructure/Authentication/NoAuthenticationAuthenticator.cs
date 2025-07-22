@@ -12,9 +12,9 @@ internal sealed class NoAuthenticationAuthenticator : ISocks5Authenticator
 {
 	public byte Method => Socks5Constants.AuthMethodNoAuthentication;
 
-	public Task<bool> AuthenticateAsync(IChannel clientChannel, CancellationToken cancellationToken)
+	public Task<AuthenticationResult> AuthenticateAsync(IChannel clientChannel, CancellationToken cancellationToken)
 	{
 		// No action needed for this method.
-		return Task.FromResult(true);
+		return Task.FromResult(AuthenticationResult.Success(clientChannel));
 	}
 }

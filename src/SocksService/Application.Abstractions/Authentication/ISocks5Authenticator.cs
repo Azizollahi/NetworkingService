@@ -9,5 +9,5 @@ namespace AG.RouterService.SocksService.Application.Abstractions.Authentication;
 public interface ISocks5Authenticator
 {
 	byte Method { get; }
-	Task<bool> AuthenticateAsync(IChannel clientChannel, CancellationToken cancellationToken);
+	Task<AuthenticationResult> AuthenticateAsync(IChannel clientChannel, CancellationToken cancellationToken);
 }

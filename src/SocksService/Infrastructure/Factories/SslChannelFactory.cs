@@ -36,7 +36,7 @@ internal sealed class SslChannelFactory : ISecureChannelFactory
 			var remoteEndPoint = underlyingChannel.RemoteEndPoint;
 
 			// Return the SslStream wrapped in our IChannel interface
-			return new SslChannel(sslStream, remoteEndPoint);
+			return new StreamBasedChannel(sslStream, remoteEndPoint);
 		}
 		catch (Exception)
 		{

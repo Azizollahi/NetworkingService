@@ -48,18 +48,25 @@ internal sealed class Socks5ProtocolHandler : IProtocolHandler
 	{
 		try
 		{
-			if (!await PerformAuthHandshakeAsync(clientChannel, initialBytes, cancellationToken))
+			// The handshake method now returns the result object
+			AuthenticationResult authResult = await PerformAuthHandshakeAsync(clientChannel, initialBytes, cancellationToken);
+
+			if (!authResult.IsSuccess)
 			{
 				this.logger.LogWarning("SOCKS5 authentication handshake failed.");
-				return;
+				return; // The authenticator has already sent the failure reply.
 			}
 
-			this.logger.LogDebug("SOCKS5 authentication successful. Reading command.");
+			// *** CRITICAL: Use the new channel returned by the authenticator ***
+			IChannel sessionChannel = authResult.Channel;
+
+			this.logger.LogDebug("SOCKS5 authentication successful. Reading command on channel {ChannelType}.", sessionChannel.GetType().Name);
 
 			Memory<byte> commandHeader = new byte[4];
-			await clientChannel.ReadExactlyAsync(commandHeader, cancellationToken);
+			await sessionChannel.ReadExactlyAsync(commandHeader, cancellationToken);
 
-			Socks5CommandContext context = new(clientChannel, commandHeader, idleTimeout);
+			// Use the sessionChannel from here on
+			Socks5CommandContext context = new(sessionChannel, commandHeader, idleTimeout);
 			await this.commandHandlerChain.HandleAsync(context, cancellationToken);
 		}
 		catch (Exception ex)
@@ -72,7 +79,7 @@ internal sealed class Socks5ProtocolHandler : IProtocolHandler
 		}
 	}
 
-	private async Task<bool> PerformAuthHandshakeAsync(IChannel channel, ReadOnlyMemory<byte> initialBytes,
+	private async Task<AuthenticationResult> PerformAuthHandshakeAsync(IChannel channel, ReadOnlyMemory<byte> initialBytes,
 		CancellationToken ct)
 	{
 		// Read client's supported methods
@@ -94,7 +101,7 @@ internal sealed class Socks5ProtocolHandler : IProtocolHandler
 			byte[] noMethodReply = [Socks5Constants.Version, 0xFF];
 			await channel.WriteAsync(noMethodReply, ct);
 			this.logger.LogWarning("No acceptable SOCKS5 authentication method found.");
-			return false;
+			return AuthenticationResult.Failure(channel);
 		}
 
 		// Send server choice: [VER, METHOD]

@@ -14,7 +14,6 @@ namespace AG.RouterService.SocksService.Infrastructure.Authentication;
 internal sealed class GssapiAuthenticator : ISocks5Authenticator
 {
 	private readonly ILogger<GssapiAuthenticator> logger;
-
 	public byte Method => 0x01; // GSS-API Method ID
 
 	public GssapiAuthenticator(ILogger<GssapiAuthenticator> logger)
@@ -22,44 +21,38 @@ internal sealed class GssapiAuthenticator : ISocks5Authenticator
 		this.logger = logger;
 	}
 
-	public async Task<bool> AuthenticateAsync(IChannel clientChannel, CancellationToken cancellationToken)
+	public async Task<AuthenticationResult> AuthenticateAsync(IChannel clientChannel, CancellationToken cancellationToken)
 	{
-		// NegotiateStream requires a System.IO.Stream, so we use our adapter.
+		// We must leave the underlying stream open for the new SslChannel to use after the handshake.
 		var channelStream = new ChannelStream(clientChannel);
+		var negotiateStream = new NegotiateStream(channelStream, leaveInnerStreamOpen: true);
 
-		// We wrap the base stream in a NegotiateStream.
-		// `leaveInnerStreamOpen` is set to true because we want to continue using the channel
-		// after authentication, and we don't want the SslStream to close it.
-		await using (var negotiateStream = new NegotiateStream(channelStream, leaveInnerStreamOpen: true))
+		try
 		{
-			try
+			await negotiateStream.AuthenticateAsServerAsync();
+
+			if (negotiateStream.IsAuthenticated)
 			{
-				// This call handles the entire multi-stage Kerberos/NTLM token exchange.
-				await negotiateStream.AuthenticateAsServerAsync();
+				this.logger.LogInformation(
+					"GSS-API authentication successful for user {UserName} using {AuthType}. IsEncrypted: {IsEncrypted}",
+					negotiateStream.RemoteIdentity.Name,
+					negotiateStream.RemoteIdentity.AuthenticationType,
+					negotiateStream.IsEncrypted);
 
-				if (negotiateStream.IsAuthenticated)
-				{
-					logger.LogInformation(
-						"GSS-API authentication successful for user {UserName} using {AuthType}.",
-						negotiateStream.RemoteIdentity.Name,
-						negotiateStream.RemoteIdentity.AuthenticationType);
-
-					// Note: After authentication, negotiateStream.IsEncrypted and IsSigned will be true.
-					// A full implementation would replace the original channel with a new one that
-					// uses this stream to provide encryption for the rest of the session.
-					// For now, we will proceed with the unencrypted underlying channel.
-
-					return true;
-				}
+				// Authentication succeeded. We return a *new* channel that wraps the now-encrypted stream.
+				// The SslChannel can wrap any Stream, including NegotiateStream.
+				var secureChannel = new StreamBasedChannel(negotiateStream, clientChannel.RemoteEndPoint);
+				return AuthenticationResult.Success(secureChannel);
 			}
-			catch (Exception ex)
-			{
-				logger.LogError(ex, "GSS-API authentication failed.");
-				return false;
-			}
+
+			this.logger.LogWarning("GSS-API authentication completed but the session is not authenticated.");
+			return AuthenticationResult.Failure(clientChannel);
 		}
-
-		logger.LogWarning("GSS-API authentication failed for an unknown reason.");
-		return false;
+		catch (Exception ex)
+		{
+			this.logger.LogError(ex, "GSS-API authentication failed with an exception.");
+			await negotiateStream.DisposeAsync(); // Clean up the stream on failure.
+			return AuthenticationResult.Failure(clientChannel);
+		}
 	}
 }

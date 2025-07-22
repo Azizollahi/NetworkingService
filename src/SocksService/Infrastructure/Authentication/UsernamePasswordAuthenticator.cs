@@ -26,7 +26,7 @@ internal sealed class UsernamePasswordAuthenticator : ISocks5Authenticator
 
 	public byte Method => Socks5Constants.AuthMethodUsernamePassword;
 
-	public async Task<bool> AuthenticateAsync(IChannel clientChannel, CancellationToken cancellationToken)
+	public async Task<AuthenticationResult> AuthenticateAsync(IChannel clientChannel, CancellationToken cancellationToken)
 	{
 		try
 		{
@@ -58,15 +58,15 @@ internal sealed class UsernamePasswordAuthenticator : ISocks5Authenticator
 
 			if (!isValid)
 			{
-				this.logger.LogWarning("SOCKS5 authentication failed for user: {Username}", username);
+				logger.LogWarning("SOCKS5 authentication failed for user: {Username}", username);
 			}
 
-			return isValid;
+			return isValid ? AuthenticationResult.Success(clientChannel) : AuthenticationResult.Failure(clientChannel);
 		}
 		catch(EndOfStreamException)
 		{
-			this.logger.LogWarning("Client disconnected during authentication.");
-			return false;
+			logger.LogWarning("Client disconnected during authentication.");
+			return AuthenticationResult.Failure(clientChannel);
 		}
 	}
 }
