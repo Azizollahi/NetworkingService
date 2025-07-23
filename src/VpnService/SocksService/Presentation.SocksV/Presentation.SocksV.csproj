@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <AssemblyName>AG.RouterService.SocksService.Presentation.SocksV</AssemblyName>
+        <RootNamespace>AG.RouterService.SocksService.Presentation.SocksV</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\Management\SharedKernel\SharedKernel.csproj" />
+      <ProjectReference Include="..\Application.Abstractions\Application.Abstractions.csproj" />
+      <ProjectReference Include="..\Domain\Domain.csproj" />
+    </ItemGroup>
+
+</Project>

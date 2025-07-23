@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <AssemblyName>AG.RouterService.SocksService.Domain</AssemblyName>
+        <RootNamespace>AG.RouterService.SocksService.Domain</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\Management\SharedKernel\SharedKernel.csproj" />
+    </ItemGroup>
+
+</Project>
