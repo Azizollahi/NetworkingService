@@ -24,25 +24,37 @@ internal sealed class AccessControlService : IAccessControlService
 		var allRules = LoadRulesFromFile(rulesFilePath);
 
 		// Pre-sort rules for efficient processing. Deny rules are checked first.
-		this.sourceRules = allRules.Where(r => r.Target == TargetType.SourceIp).OrderBy(r => r.Type).ToList();
+		this.sourceRules = allRules.Where(r => r.Target == TargetType.SourceIp).ToList();
 		this.destinationRules =
-			allRules.Where(r => r.Target == TargetType.DestinationHost).OrderBy(r => r.Type).ToList();
+			allRules.Where(r => r.Target == TargetType.DestinationHost).ToList();
 	}
 
 	public Task<bool> IsSourceAllowedAsync(IPAddress sourceIpAddress)
 	{
-		// Find the first matching rule. Since Deny rules come first, they take precedence.
-		var rule = this.sourceRules.FirstOrDefault(r => Matches(sourceIpAddress.ToString(), r.Pattern));
-		bool isAllowed =
-			rule?.Type == RuleType.Allow; // Allowed only if an Allow rule matches. Deny or no match = deny.
-		return Task.FromResult(isAllowed);
+		return Task.FromResult(IsAllowed(sourceIpAddress.ToString(), this.sourceRules));
 	}
 
 	public Task<bool> IsDestinationAllowedAsync(string destinationHost)
 	{
-		var rule = this.destinationRules.FirstOrDefault(r => Matches(destinationHost, r.Pattern));
-		bool isAllowed = rule?.Type == RuleType.Allow;
-		return Task.FromResult(isAllowed);
+		return Task.FromResult(IsAllowed(destinationHost, this.destinationRules));
+	}
+
+	private bool IsAllowed(string input, List<AccessRule> rules)
+	{
+		if(rules.Count == 0)
+			return true;
+
+		if (rules.Any(r => r.Type == RuleType.Deny && Matches(input, r.Pattern)))
+		{
+			return false;
+		}
+
+		if (rules.Any(r => r.Type == RuleType.Allow && Matches(input, r.Pattern)))
+		{
+			return true;
+		}
+
+		return false;
 	}
 
 	private bool Matches(string input, string pattern)
