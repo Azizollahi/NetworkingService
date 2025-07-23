@@ -4,6 +4,7 @@ using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using AG.RouterService.DomainNameService.Application.Abstractions.Services;
 using AG.RouterService.PrivateNetwork.Application.Abstractions.Services;
 using AG.RouterService.SocksService.Application.Abstractions.Channels;
 using AG.RouterService.SocksService.Application.Abstractions.Exceptions;
@@ -22,13 +23,15 @@ internal sealed class ConnectCommandHandler : AbstractSocks5CommandHandler
 	private readonly ISocks5ReplyWriter replyWriter;
 	private readonly IAccessControlService accessControlService;
 	private readonly IPrivateNetworkService privateNetworkService;
+	private readonly IDnsResolverService dnsResolverService;
 	public ConnectCommandHandler(
 		ILogger<ConnectCommandHandler> logger,
 		IOutgoingChannelFactory channelFactory,
 		IDataRelayService dataRelayService,
 		ISocks5AddressReader addressReader,
 		ISocks5ReplyWriter replyWriter,
-		IAccessControlService accessControlService, IPrivateNetworkService privateNetworkService)
+		IAccessControlService accessControlService, IPrivateNetworkService privateNetworkService,
+		IDnsResolverService dnsResolverService)
 	{
 		this.logger = logger;
 		this.channelFactory = channelFactory;
@@ -37,6 +40,7 @@ internal sealed class ConnectCommandHandler : AbstractSocks5CommandHandler
 		this.replyWriter = replyWriter;
 		this.accessControlService = accessControlService;
 		this.privateNetworkService = privateNetworkService;
+		this.dnsResolverService = dnsResolverService;
 	}
 
 	public override async Task HandleAsync(Socks5CommandContext context, CancellationToken cancellationToken)
@@ -57,7 +61,21 @@ internal sealed class ConnectCommandHandler : AbstractSocks5CommandHandler
 				// Error occurred and reply was already sent by the helper.
 				return;
 			}
-			bool isPrivateDestination = IPAddress.TryParse(host, out var ipAddress) && IsPrivateIp(ipAddress);
+			string targetHost = host;
+			if (!IPAddress.TryParse(host, out _))
+			{
+				var privateIp = await dnsResolverService.ResolveAsync(host);
+				if (privateIp is not null)
+				{
+					logger.LogInformation("Resolved '{targetHost}' to private IP {PrivateIp} via local DNS.", targetHost, privateIp);
+					targetHost = privateIp.ToString();
+				}
+			}
+
+			if(targetHost is null)
+				targetHost = host;
+
+			bool isPrivateDestination = IPAddress.TryParse(targetHost, out var ipAddress) && IsPrivateIp(ipAddress);
 
 			if (isPrivateDestination)
 			{
@@ -65,7 +83,7 @@ internal sealed class ConnectCommandHandler : AbstractSocks5CommandHandler
 				// Requires an authenticated user.
 				if (context.AuthenticatedUsername is null)
 				{
-					logger.LogWarning("Anonymous user attempted to connect to private IP {Host}. Denied.", host);
+					logger.LogWarning("Anonymous user attempted to connect to private IP {targetHost}. Denied.", targetHost);
 					await replyWriter.SendReplyAsync(context.ClientChannel, Socks5Constants.ReplyConnectionNotAllowed, IPAddress.Any, 0, cancellationToken);
 					return;
 				}
@@ -84,7 +102,7 @@ internal sealed class ConnectCommandHandler : AbstractSocks5CommandHandler
 				return;
 			}
 
-			IChannel? targetChannel = await channelFactory.CreateConnectionAsync(host, port, cancellationToken);
+			IChannel? targetChannel = await channelFactory.CreateConnectionAsync(targetHost, port, cancellationToken);
 			if (targetChannel is null)
 			{
 				await replyWriter.SendReplyAsync(context.ClientChannel, Socks5Constants.ReplyConnectionRefused, IPAddress.Any, 0, cancellationToken);

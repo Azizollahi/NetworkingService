@@ -17,6 +17,7 @@
 	
     <ItemGroup>
       <ProjectReference Include="..\..\AuthService\Application.Abstractions\Application.Abstractions.csproj" />
+      <ProjectReference Include="..\..\DomainNameService\Application.Abstractions\Application.Abstractions.csproj" />
       <ProjectReference Include="..\..\PrivateNetwork\Application.Abstractions\Application.Abstractions.csproj" />
       <ProjectReference Include="..\Application.Abstractions\Application.Abstractions.csproj" />
       <ProjectReference Include="..\Domain\Domain.csproj" />

@@ -1,6 +1,7 @@
 // Copyright By Hossein Azizollahi All Right Reserved.
 
 using AG.RouterService.AuthService.Infrastructure.Extensions;
+using AG.RouterService.DomainNameService.Infrastructure.Extensions;
 using AG.RouterService.Infrastructure.Persistence.Extensions;
 using AG.RouterService.PrivateNetwork.Application.Extensions;
 using AG.RouterService.PrivateNetwork.Infrastructure.Extensions;
@@ -41,6 +42,9 @@ public class Startup
 		// PrivateNetwork Module
 		services.AddPrivateNetworkApplication(configuration);
 		services.AddPrivateNetworkInfrastructure(configuration);
+
+		// DomainNameService Module
+		services.AddDomainNameServiceInfrastructure(configuration);
 	}
 
 	public void ConfigureHost(ConfigureHostBuilder builder)

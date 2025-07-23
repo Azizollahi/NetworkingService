@@ -14,7 +14,7 @@ namespace AG.RouterService.AuthService.Infrastructure.Persistence;
 
 public sealed class PersistenceOptions
 {
-	public string FilePath { get; set; } = "./";
+	public string FilePath { get; set; } = "./configs/";
 }
 
 internal sealed class UserRepository : IUserRepository

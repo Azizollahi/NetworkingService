@@ -32,6 +32,8 @@
     <ItemGroup>
       <ProjectReference Include="..\AuthService\Application\Application.csproj" />
       <ProjectReference Include="..\AuthService\Infrastructure\Infrastructure.csproj" />
+      <ProjectReference Include="..\DomainNameService\Application\Application.csproj" />
+      <ProjectReference Include="..\DomainNameService\Infrastructure\Infrastructure.csproj" />
       <ProjectReference Include="..\Infrastructure\Persistence\Persistence.csproj" />
       <ProjectReference Include="..\Infrastructure\Shared\Shared.csproj" />
       <ProjectReference Include="..\PrivateNetwork\Application\Application.csproj" />

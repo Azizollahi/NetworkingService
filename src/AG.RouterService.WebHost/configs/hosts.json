@@ -1,0 +1,16 @@
+[
+	{
+		"Hostname": "internal.service.local",
+		"IpAddresses": [
+			"10.1.1.10",
+			"10.1.1.11"
+		]
+	},
+	{
+		"Hostname": "database.local",
+		"IpAddresses": [
+			"10.1.1.20",
+			"10.1.1.21"
+		]
+	}
+]

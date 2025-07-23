@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using AG.RouterService.DomainNameService.Application.Abstractions.Services;
 using AG.RouterService.SocksService.Application.Abstractions.Channels;
 using AG.RouterService.SocksService.Application.Abstractions.Protocols;
 using AG.RouterService.SocksService.Application.Abstractions.Services;
@@ -21,19 +22,21 @@ internal sealed class Socks4ProtocolHandler : IProtocolHandler
 	private readonly IOutgoingChannelFactory outgoingChannelFactory;
 	private readonly IDataRelayService dataRelayService;
 	private readonly IAccessControlService accessControlService;
+	private readonly IDnsResolverService dnsResolverService;
 
 	public Socks4ProtocolHandler(
 		ILogger<Socks4ProtocolHandler> logger,
 		IChannelFactory channelFactory,
 		IOutgoingChannelFactory outgoingChannelFactory,
 		IDataRelayService dataRelayService,
-		IAccessControlService accessControlService)
+		IAccessControlService accessControlService, IDnsResolverService dnsResolverService)
 	{
 		this.logger = logger;
 		this.channelFactory = channelFactory;
 		this.outgoingChannelFactory = outgoingChannelFactory;
 		this.dataRelayService = dataRelayService;
 		this.accessControlService = accessControlService;
+		this.dnsResolverService = dnsResolverService;
 	}
 
 	public bool CanHandle(ReadOnlySpan<byte> initialBytes)
@@ -77,8 +80,21 @@ internal sealed class Socks4ProtocolHandler : IProtocolHandler
 		(string? host, int port) = await ReadCommandBodyAsync(clientChannel, cancellationToken);
 		if (host is null) return;
 
+		string targetHost = host;
+		if (!IPAddress.TryParse(host, out _))
+		{
+			var privateIp = await dnsResolverService.ResolveAsync(host);
+			if (privateIp is not null)
+			{
+				logger.LogInformation("Resolved '{targetHost}' to private IP {PrivateIp} via local DNS.", targetHost, privateIp);
+				targetHost = privateIp.ToString();
+			}
+		}
+		if(targetHost is null)
+			targetHost = host;
+
 		// Add the destination check here
-		if (!await this.accessControlService.IsDestinationAllowedAsync(host))
+		if (!await this.accessControlService.IsDestinationAllowedAsync(targetHost))
 		{
 			this.logger.LogWarning("SOCKS4 connection to destination {Host} denied by access rules.", host);
 			await SendReplyAsync(clientChannel, Socks4Constants.ReplyFailed, 0, IPAddress.Any, cancellationToken);
@@ -86,7 +102,7 @@ internal sealed class Socks4ProtocolHandler : IProtocolHandler
 		}
 
 		IChannel? targetChannel =
-			await this.outgoingChannelFactory.CreateConnectionAsync(host, port, cancellationToken);
+			await this.outgoingChannelFactory.CreateConnectionAsync(targetHost, port, cancellationToken);
 		if (targetChannel is null)
 		{
 			await SendReplyAsync(clientChannel, Socks4Constants.ReplyFailed, 0, IPAddress.Any, cancellationToken);

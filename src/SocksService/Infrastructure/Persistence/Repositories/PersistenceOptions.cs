@@ -13,5 +13,5 @@ namespace AG.RouterService.SocksService.Infrastructure.Persistence.Repositories;
 
 public sealed class PersistenceOptions
 {
-	public string FilePath { get; set; } = "./";
+	public string FilePath { get; set; } = "./configs/";
 }
